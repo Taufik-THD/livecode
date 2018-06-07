@@ -20,17 +20,19 @@
       	<div id="login" class="col s12">
       		<form class="col s12">
       			<div class="form-container">
-      				<div class="row">
-                <br>
-      					<div class="input-field col s12">
-                  <textarea id="textarea1" class="materialize-textarea" v-model='newTodo.newActivity'></textarea>
-      						<label for="text">New Activity</label>
-      					</div>
-      				</div>
+              <div class="file-field input-field">
+                <div class="btn">
+                  <span>File</span>
+                  <input type="file" @change="onFileChanged">
+                </div>
+                <div class="file-path-wrapper">
+                  <input class="file-path validate" type="text">
+                </div>
+              </div>
       				<br>
       				<center>
-                <a class="btn modal-action modal-close waves-effect waves-light teal" style="margin-right:5px;" @click='reset()'>Cancel</a>
-      					<button class="btn waves-effect waves-light teal" @click='datetest'>Submit</button>
+                <a class="btn modal-action modal-close waves-effect waves-light teal" style="margin-right:5px;" @click='reset()'>Done</a>
+      					<button class="btn waves-effect waves-light teal" @click='onUpload'>Upload</button>
       					<br>
       				</center>
       			</div>
@@ -43,6 +45,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 
 export default {
   created () {
@@ -50,17 +53,11 @@ export default {
   },
   data () {
     return {
-      newTodo: {
-        newActivity: '',
-        Deadline: ''
-      },
-      date: ''
+      image: '',
+      formdata: new FormData(),
     }
   },
   methods: {
-    goToRegister () {
-      this.$router.push('register')
-    },
     checkStorage () {
       if (!localStorage.hasOwnProperty('authorization')) {
         return false
@@ -68,39 +65,45 @@ export default {
         return true
       }
     },
-    datetest () {
-      console.log(this.newToDo);
-    },
-    addTodo(event){
-      event.preventDefault()
-
-      const token = localStorage.getItem('authorization')
-      const todo  = {
-        activity: this.newTodo.newActivity,
-        deadline: this.newTodo.Deadline,
-        token
-      }
-
-      axios({
-        method: 'post',
-        url: 'http://localhost:3000/todo/add',
-        data: todo
-      })
-      .then(() => {
-        this.newToDo = ''
-        this.getTodo()
-      })
-      .catch(err => {
-        console.log(err);
-      })
-    },
     reset () {
-      this.newTodo.newActivity = ''
-      this.newTodo.Deadline = ''
+      this.image = ''
     },
     logout () {
       localStorage.clear();
       this.$router.push('/')
+    },
+    onFileChanged (event) {
+      this.image = event.target.files[0]
+    },
+    onUpload() {
+      // upload file
+      const token = localStorage.getItem('authorization')
+      const newImage = this.image
+
+      axios({
+        method: 'post',
+        url: 'http://35.197.135.159/image',
+        data: {
+          file: newImage
+        },
+        header: {
+          authorization: token
+        }
+      }).then(response => {
+        console.log('yay! success upload');
+      }).catch(err => {
+        console.log(err);
+      })
+
+    },
+    createImage(file) {
+      var image = new Image();
+      var reader = new FileReader();
+
+      reader.onload = (event) => {
+        this.image = event.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   }
 }
